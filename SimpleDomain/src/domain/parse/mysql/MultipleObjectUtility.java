@@ -4,12 +4,11 @@
  * and open the template in the editor.
  */
 
-package domain;
+package domain.parse.mysql;
 
 /**
- * 
+ *
  * @author Daniel
  */
-class Utility {
-    
+class MultipleObjectUtility {
 }

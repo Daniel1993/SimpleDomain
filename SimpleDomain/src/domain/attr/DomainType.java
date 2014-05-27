@@ -7,8 +7,10 @@
 package domain.attr;
 
 /**
- *
- * @author Daniel
+ * The <code>DomainType</code> enum states if a class field is a primitive type,
+ * a DomainObject, a MultipleObject or Other.
+ * 
+ * @author Daniel Castro
  */
  public enum DomainType {
     PRIMITIVE, DOMAIN_OBJECT, MULTIPLE_OBJECT, OTHER

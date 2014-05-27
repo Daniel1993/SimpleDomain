@@ -5,18 +5,42 @@
  */
 package domain.attr;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  *
+ * @author Daniel Castro
  */
 public class Attr {
 
+    /**
+     * The field name.
+     */
     private final String name;
+    
+    /**
+     * The field DomainType.
+     * 
+     * @see DomainType
+     */
     private final DomainType domainType;
+    
+    /**
+     * This field class type.
+     * 
+     * Allowed types are: boolean, int
+     */
     private final Class type;
+    
+    /**
+     * This field value.
+     * 
+     * The value may be a primitive java type (int, float, ...), a DomainObject
+     * or a MultipleObject other types will be discarted.
+     */
     private final Object value;
+    
+    /**
+     * Class type of the Object that contains the field.
+     */
     private final Class container;
     
     /**
@@ -37,7 +61,8 @@ public class Attr {
 
     /**
      * 
-     * @return 
+     * @return the field name
+     * @see #name
      */
     public String getName() {
         return name;
@@ -45,7 +70,8 @@ public class Attr {
 
     /**
      * 
-     * @return 
+     * @return the field DomainType classification
+     * @see #domainType
      */
     public DomainType getDomainType() {
         return domainType;
@@ -53,7 +79,8 @@ public class Attr {
 
     /**
      * 
-     * @return 
+     * @return the field value
+     * @see #value
      */
     public Object getValue() {
         return value;
@@ -62,6 +89,7 @@ public class Attr {
     /**
      * 
      * @return 
+     * @see #type
      */
     public Class getType() {
         return type;
@@ -69,7 +97,8 @@ public class Attr {
     
     /**
      * 
-     * @return 
+     * @return the container class type
+     * @see #container
      */
     public Class getContainer() {
         return container;

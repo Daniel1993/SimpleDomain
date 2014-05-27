@@ -5,8 +5,10 @@
  */
 package domain;
 
+import domain.parse.Parser;
+import domain.parse.ParserInitializer;
 import domain.attr.AttrUtility;
-import domain.mysql.MySQLParser;
+import domain.parse.mysql.MysqlParser;
 
 /**
  *
@@ -71,7 +73,7 @@ public final class DomainManager {
    */
   public void initializeMySQL(String databaseServer,
           String databaseName, String databaseUser, String databasePass) {
-    presistentParser = MySQLParser.getInstance();
+    presistentParser = MysqlParser.getInstance();
     ParserInitializer.initializeMySQL(presistentParser,
             databaseServer, databaseName, databaseUser, databasePass);
   }
