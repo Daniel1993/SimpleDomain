@@ -25,7 +25,7 @@ public final class MultipleObject<T extends DomainObject> extends DomainObject {
   }
 
   public boolean add(T obj) {
-    DomainManager.getInstance().getPresistentParser().parseAttrs(AttrUtility.
+    DomainManager.getInstance().getPresistentParser().saveObj(AttrUtility.
             objectChain(obj.getClass(), obj));
     return DomainManager.getInstance().getPresistentParser().addObjToMultObj(
             obj.getOID(), oid);

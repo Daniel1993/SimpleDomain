@@ -8,20 +8,32 @@ package domain.parse.mysql;
 import domain.DomainManager;
 import domain.MultipleObject;
 import domain.DomainObject;
+import domain.attr.AttrCheck;
+import domain.attr.AttrUtility;
+import static domain.parse.mysql.MysqlStrings.*;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import simplemysql.SimpleMySQL;
+import simplemysql.SimpleMySQLResult;
+import simplemysql.exception.ResultException;
+import simplemysql.exception.SimpleMySQLException;
 import simplemysql.query.clause.CreateTableClause;
 import simplemysql.query.QueryBuilder;
+import simplemysql.query.clause.WhereClause;
 
 /**
  *
  * @author Daniel
  */
 final class MysqlUtility {
+
+  static final Map<Long, DomainObject> loadedObjs = new HashMap<>();
 
   private MysqlUtility() {
   }
@@ -37,38 +49,77 @@ final class MysqlUtility {
     return check;
   }
 
+  static Stack<Class> getClassChain(SimpleMySQL mysql, long oid) {
+    try {
+      QueryBuilder query = new QueryBuilder();
+      WhereClause where = new WhereClause();
+      where.compareWithValue(OID, "=", "" + oid);
+      query.SELECT(true, OBJECT_NAME);
+      query.FROM(DomainObject.class.getName());
+      query.WHERE(where);
+      SimpleMySQLResult savedObj;
+      savedObj = mysql.Query(query.toString());
+
+      if (savedObj.getNumRows() == 0) {
+        return null;
+      }
+
+      Map<String, String> fetchObjName = savedObj.FetchAssoc();
+      Class objType = null;
+      try {
+        objType = Class.forName(fetchObjName.get(OBJECT_NAME));
+      } catch (ClassNotFoundException ex) {
+        Logger.getLogger(MysqlParser.class.getName()).
+                log(Level.SEVERE, null, ex);
+      }
+
+      if (objType == null) {
+        return null;
+      }
+
+      return AttrUtility.objectChain(objType);
+    } catch (SimpleMySQLException | ResultException ex) {
+      Logger.getLogger(MysqlUtility.class.getName()).log(Level.SEVERE, null, ex);
+    }
+
+    return null;
+  }
+
   /**
    * Converts a java type to a MySQL type.
    *
    * @param javaType
    * @return
    */
-  static String toMysqlType(String javaType) {
+  static String toMysqlType(Class type) {
+    String javaType = type.getName();
     if (checkType(javaType, byte.class.getName(), Byte.class.getName())) {
-      return MysqlStrings.BYTE_MySQL_TYPE;
+      return BYTE_MySQL_TYPE;
     } else if (checkType(javaType, short.class.getName(),
             Short.class.getName())) {
-      return MysqlStrings.SHORT_MySQL_TYPE;
+      return SHORT_MySQL_TYPE;
     } else if (checkType(javaType, int.class.getName(),
             Integer.class.getName())) {
-      return MysqlStrings.INT_MySQL_TYPE;
+      return INT_MySQL_TYPE;
     } else if (checkType(javaType, long.class.getName(),
             Long.class.getName())) {
-      return MysqlStrings.LONG_MySQL_TYPE;
+      return LONG_MySQL_TYPE;
     } else if (checkType(javaType, boolean.class.getName(),
             Boolean.class.getName())) {
-      return MysqlStrings.BOOLEAN_MySQL_TYPE;
+      return BOOLEAN_MySQL_TYPE;
     } else if (checkType(javaType, char.class.getName(),
             Character.class.getName())) {
-      return MysqlStrings.CHAR_MySQL_TYPE;
+      return CHAR_MySQL_TYPE;
     } else if (checkType(javaType, float.class.getName(),
             Float.class.getName())) {
-      return MysqlStrings.FLOAT_MySQL_TYPE;
+      return FLOAT_MySQL_TYPE;
     } else if (checkType(javaType, double.class.getName(),
             Double.class.getName())) {
-      return MysqlStrings.DOUBLE_MySQL_TYPE;
+      return DOUBLE_MySQL_TYPE;
     } else if (checkType(javaType, String.class.getName())) {
-      return MysqlStrings.STRING_MySQL_TYPE;
+      return STRING_MySQL_TYPE;
+    } else if (AttrCheck.isDomainObject(type)) {
+      return OID_MySQL_TYPE;
     } else {
       return "";
     }
@@ -77,7 +128,7 @@ final class MysqlUtility {
 
   static Object valueOf(String type, String value) {
     if (value == null || value.equals("") || value.equals(
-            MysqlStrings.NULL_VALUE)) {
+            NULL_VALUE)) {
       return null;
     }
     if (checkType(type, byte.class.getName(), Byte.class.getName())) {
@@ -110,7 +161,7 @@ final class MysqlUtility {
     }
     // TODO: DATE, DATETIME & TIMESTAMP
   }
-  
+
   static Object valueOf(Class type, String value) {
     return valueOf(type.getName(), value);
   }
@@ -133,44 +184,56 @@ final class MysqlUtility {
   }
 
   private static void createObjectTable(SimpleMySQL mysql, String tableName) {
-    QueryBuilder query = new QueryBuilder();
-    CreateTableClause table = new CreateTableClause();
-    table.addColumn(MysqlStrings.OID, MysqlStrings.OID_MySQL_TYPE);
-    table.addPrimaryKey(MysqlStrings.OID);
-    query.CREATE_TABLE(true, tableName, table);
-    Logger.getLogger(DomainManager.class.getName()).log(Level.INFO,
-            query.toString());
-    mysql.Query(query.toString());
+    try {
+      QueryBuilder query = new QueryBuilder();
+      CreateTableClause table = new CreateTableClause();
+      table.addColumn(OID, OID_MySQL_TYPE);
+      table.addPrimaryKey(OID);
+      query.CREATE_TABLE(true, tableName, table);
+      Logger.getLogger(DomainManager.class.getName()).log(Level.INFO,
+              query.toString());
+      mysql.Query(query.toString());
+    } catch (SimpleMySQLException ex) {
+      Logger.getLogger(MysqlUtility.class.getName()).log(Level.SEVERE, null, ex);
+    }
   }
 
   private static void createMultipleObjectTable(SimpleMySQL mysql,
           String tableName) {
-    QueryBuilder query = new QueryBuilder();
-    CreateTableClause table = new CreateTableClause();
-    table.addColumn(MysqlStrings.OID, MysqlStrings.OID_MySQL_TYPE);
-    table.addColumn(MysqlStrings.MULTIPLE_OID, MysqlStrings.OID_MySQL_TYPE);
-    table.addPrimaryKey(MysqlStrings.MULTIPLE_OID, MysqlStrings.OID);
-    query.CREATE_TABLE(true, tableName, table);
-    Logger.getLogger(DomainManager.class.getName()).log(Level.INFO,
-            query.toString());
-    mysql.Query(query.toString());
+    try {
+      QueryBuilder query = new QueryBuilder();
+      CreateTableClause table = new CreateTableClause();
+      table.addColumn(OID, OID_MySQL_TYPE);
+      table.addColumn(MULTIPLE_OID, OID_MySQL_TYPE);
+      table.addPrimaryKey(MULTIPLE_OID, OID);
+      query.CREATE_TABLE(true, tableName, table);
+      Logger.getLogger(DomainManager.class.getName()).log(Level.INFO,
+              query.toString());
+      mysql.Query(query.toString());
+    } catch (SimpleMySQLException ex) {
+      Logger.getLogger(MysqlUtility.class.getName()).log(Level.SEVERE, null, ex);
+    }
   }
 
   private static void addColumnThenModify(SimpleMySQL mysql, String tableName,
           String columnName, String columnType) {
-    // tries to add the column
-    QueryBuilder query = new QueryBuilder();
-    query.ALTER_TABLE_ADD(true, tableName, columnName, columnType);
-    Logger.getLogger(DomainManager.class.getName()).log(Level.INFO,
-            query.toString());
-    mysql.Query(query.toString());
+    try {
+      // tries to add the column
+      QueryBuilder query = new QueryBuilder();
+      query.ALTER_TABLE_ADD(true, tableName, columnName, columnType);
+      Logger.getLogger(DomainManager.class.getName()).log(Level.INFO,
+              query.toString());
+      mysql.Query(query.toString());
 
-    // tries to modify the column
-    query = new QueryBuilder();
-    query.ALTER_TABLE_MODIFY(true, tableName, columnName, columnType);
-    Logger.getLogger(DomainManager.class.getName()).log(Level.INFO,
-            query.toString());
-    mysql.Query(query.toString());
+      // tries to modify the column
+      query = new QueryBuilder();
+      query.ALTER_TABLE_MODIFY(true, tableName, columnName, columnType);
+      Logger.getLogger(DomainManager.class.getName()).log(Level.INFO,
+              query.toString());
+      mysql.Query(query.toString());
+    } catch (SimpleMySQLException ex) {
+      Logger.getLogger(MysqlUtility.class.getName()).log(Level.SEVERE, null, ex);
+    }
   }
 
   static void setObjectTable(SimpleMySQL mysql, Class objType) {
@@ -179,14 +242,14 @@ final class MysqlUtility {
       createObjectTable(mysql, tableName);
       for (Field f : objType.getDeclaredFields()) {
         addColumnThenModify(mysql, tableName, f.getName(),
-                toMysqlType(f.getType().getName()));
+                toMysqlType(f.getType()));
       }
       processedTables.add(tableName);
     }
   }
 
   static void setMultipleObjectTable(SimpleMySQL mysql) {
-    String tableName = MultipleObject.class.getName();
+    String tableName = MULTIPLE_OBJECT;
     if (!processedTables.contains(tableName)) {
       createMultipleObjectTable(mysql, tableName);
       processedTables.add(tableName);
@@ -195,17 +258,21 @@ final class MysqlUtility {
 
   static void createRootTable(SimpleMySQL mysql) {
     if (!rootObjectTableInit) {
-      QueryBuilder query = new QueryBuilder();
-      CreateTableClause table = new CreateTableClause();
-      table.addColumn(MysqlStrings.OID, MysqlStrings.OID_MySQL_TYPE);
-      table.addColumn(MysqlStrings.TABLE_NAME,
-              MysqlStrings.STRING_MySQL_TYPE);
-      table.addPrimaryKey(MysqlStrings.OID);
-      query.CREATE_TABLE(true, MysqlStrings.ROOT_TABLE_NAME, table);
-      Logger.getLogger(DomainManager.class.getName()).log(Level.INFO,
-              query.toString());
-      mysql.Query(query.toString());
-      rootObjectTableInit = true;
+      try {
+        QueryBuilder query = new QueryBuilder();
+        CreateTableClause table = new CreateTableClause();
+        table.addColumn(OID, OID_MySQL_TYPE);
+        table.addColumn(TABLE_NAME, STRING_MySQL_TYPE);
+        table.addPrimaryKey(OID);
+        query.CREATE_TABLE(true, ROOT_TABLE_NAME, table);
+        Logger.getLogger(DomainManager.class.getName()).log(Level.INFO,
+                query.toString());
+        mysql.Query(query.toString());
+        rootObjectTableInit = true;
+      } catch (SimpleMySQLException ex) {
+        Logger.getLogger(MysqlUtility.class.getName()).log(Level.SEVERE, null,
+                ex);
+      }
     }
   }
 }

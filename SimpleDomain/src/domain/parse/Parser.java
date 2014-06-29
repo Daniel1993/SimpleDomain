@@ -24,7 +24,7 @@ public interface Parser {
      * @param attrs a data structure of the object to parse, first element to
      * pop must be a DomainObject
      */
-    void parseAttrs(Stack<Pair<Class, List<Attr>>> attrs);
+    void saveObj(Stack<Pair<Class, List<Attr>>> attrs);
 
     /**
      * Sets a saved object as root.
@@ -48,9 +48,9 @@ public interface Parser {
      * @param oid the object oid
      * @return the required object
      */
-    DomainObject loadObj(Stack<Class> type, long oid);
+    DomainObject loadObj(long oid);
 
-    boolean deleteObj(Stack<Class> type);
+    boolean deleteObj();
     
     boolean deleteObj(Stack<Class> type, long oid);
     

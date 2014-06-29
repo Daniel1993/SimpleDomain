@@ -8,9 +8,13 @@ package test;
 import domain.DomainObject;
 import domain.MultipleObject;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import simplemysql.query.QueryBuilder;
 import simplemysql.SimpleMySQL;
 import simplemysql.SimpleMySQLResult;
+import simplemysql.exception.ResultException;
+import simplemysql.exception.SimpleMySQLException;
 
 /**
  *
@@ -69,12 +73,17 @@ class Utility {
   }
   
   public static Map<String, String> selectFromDatabase(String tableName) {
-    SimpleMySQL mysql = new SimpleMySQL();
-    mysql.connect(server, user, pass, database);
-    QueryBuilder query = new QueryBuilder().SELECT(false).FROM(tableName);
-    SimpleMySQLResult result = mysql.Query(query.toString());
-    Map<String, String> row = result.FetchAssoc();
-    mysql.close();
-    return row;
+    try {
+      SimpleMySQL mysql = new SimpleMySQL();
+      mysql.connect(server, user, pass, database);
+      QueryBuilder query = new QueryBuilder().SELECT(false).FROM(tableName);
+      SimpleMySQLResult result = mysql.Query(query.toString());
+      Map<String, String> row = result.FetchAssoc();
+      mysql.close();
+      return row;
+    } catch (SimpleMySQLException | ResultException ex) {
+      Logger.getLogger(Utility.class.getName()).log(Level.SEVERE, null, ex);
+    }
+    return null;
   }
 }

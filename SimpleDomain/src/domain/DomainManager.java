@@ -44,7 +44,7 @@ public final class DomainManager {
 
   public <T extends DomainObject> void commit(T obj) {
     //...
-    presistentParser.parseAttrs(
+    presistentParser.saveObj(
             AttrUtility.objectChain(obj.getClass(), obj));
     // if multiple objects
     //presistentParser.parseMultipleObject(null, objId, mulObjId);

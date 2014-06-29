@@ -18,6 +18,7 @@ public class MysqlStrings {
   static final String DOMAIN_OBJECT = "domainObject";
   static final String OID = "oid";
   static final String MULTIPLE_OID = "moid";
+  static final String MULTIPLE_OBJECT = "multipleObject";
 
   static final String BYTE_MySQL_TYPE = "TINYINT";
   static final String CHAR_MySQL_TYPE = "CHAR";
